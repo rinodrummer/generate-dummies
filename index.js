@@ -19,18 +19,22 @@ fs.writeFileSync('dummies.sql', '');
 
 (async (urls = {}, fns = {}) => {
     urls.forEach(async (url, key) => {
-        let data;
+        console.log('Scaricando il file "' + url + '";');
 
         try {
-            data = await (await fetch(url)).json();
-            console.log(data);
+            await (await fetch(url)).json().then((data) => {
+                console.log(data);
 
-            if () {
-                fns[key].call(data);
-            }
-            else {
+                if (fns.hasOwnProperty(key)) {
+                    console.log('\nEsecuzione di "' + key + '":');
 
-            }
+                    fns[key].call(data);
+                }
+                else {
+                    console.log('La funzione per "' + key + '" non esiste.');
+                }
+            })
+
         }
         catch (err) {
             console.error(err);
@@ -39,6 +43,8 @@ fs.writeFileSync('dummies.sql', '');
 })(urls, {
     'stazioni': (data) => {
         let list = new Set();
+
+        console.log(data);
 
         data.forEach((s, index) => {
             const coordinate = {
@@ -57,6 +63,8 @@ fs.writeFileSync('dummies.sql', '');
 
             list.add(staz);
         });
+
+        console.log(list);
 
         for (let staz of list) {
             let {nome, latitudine, longitudine} = staz;
