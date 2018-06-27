@@ -73,4 +73,4 @@ typings/
 .serverless
 
 # SQL files
-.sql
+*.sql
