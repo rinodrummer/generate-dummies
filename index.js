@@ -1,20 +1,10 @@
 const fs = require('fs');
 const fetch = require('node-fetch');
 
-const urls = {
-    'stazioni': 'https://pastebin.com/raw/Y1E80QzG',
-    'stazioni-adiacenti': 'https://pastebin.com/raw/Z9nQQ9Me'
-}
+const urls = new Map();
 
-function hasRepetitions(list, element) {
-    list.forEach((elem, i) => {
-        if (elem.nome === element.nome) {
-            return true;
-        }
-    });
-
-    return false;
-}
+urls.set('stazioni', 'https://pastebin.com/raw/Y1E80QzG');
+urls.set('stazioni-adiacenti', 'https://pastebin.com/raw/Z9nQQ9Me');
 
 const stazione = {
     nome: '',
@@ -27,7 +17,67 @@ let stazioni = [];
 
 fs.writeFileSync('dummies.sql', '');
 
-(async function generateData(url, fn) {
+(async (urls = {}, fns = {}) => {
+    urls.forEach(async (url, key) => {
+        let data;
+
+        try {
+            data = await (await fetch(url)).json();
+            console.log(data);
+
+            if () {
+                fns[key].call(data);
+            }
+            else {
+
+            }
+        }
+        catch (err) {
+            console.error(err);
+        }
+    });
+})(urls, {
+    'stazioni': (data) => {
+        let list = new Set();
+
+        data.forEach((s, index) => {
+            const coordinate = {
+                lat: 0,
+                lon: 0
+            };
+
+            let coord = Object.assign({}, coordinate, /Point\((?<lon>-?[0-9]{1,3}(?:.[0-9]{1,9})?) (?<lat>-?[0-9]{1,3}(?:.[0-9]{1,9})?)\)/.exec(s.coordinate).groups);
+
+            let staz = Object.assign({}, stazione, {
+                nome: s.stazLabel.replace(/[']{1}/g, '\'\''),
+                latitudine: Number(coord.lat.substring(0, 8)),
+                longitudine: Number(coord.lon.substring(0, 8))
+
+            });
+
+            list.add(staz);
+        });
+
+        for (let staz of list) {
+            let {nome, latitudine, longitudine} = staz;
+
+            let keys = [];
+            keys = Object.keys(stazione).filter((elem, index) => {
+                if (elem === 'isAttiva') {
+                    keys.slice(index);
+                }
+                else {
+                    return elem;
+                }
+            }).join(', ');
+
+            let query = `INSERT INTO stazioni(${keys}) VALUES ('${nome}', ${latitudine}, ${longitudine});\n`
+            fs.writeFileSync('dummies.sql', query, {flag: 'as'});
+        }
+    }
+});
+
+/*(async function generateData(url, fn) {
     let res = {};
 
     try {
@@ -50,9 +100,9 @@ fs.writeFileSync('dummies.sql', '');
         let coord = Object.assign({}, coordinate, /Point\((?<lon>-?[0-9]{1,3}(?:.[0-9]{1,9})?) (?<lat>-?[0-9]{1,3}(?:.[0-9]{1,9})?)\)/.exec(s.coordinate).groups);
 
         let staz = Object.assign({}, stazione, {
-            nome: s.stazLabel.replace(/[']{1}/, '\'\''),
+            nome: s.stazLabel.replace(/[']{1}/g, '\'\''),
             latitudine: Number(coord.lat.substring(0, 8)),
-            longitudine: Number(coord.lat.substring(0, 8))
+            longitudine: Number(coord.lon.substring(0, 8))
 
         });
 
@@ -63,21 +113,5 @@ fs.writeFileSync('dummies.sql', '');
 
     return list;
 }).then((list) => {
-    //console.log("called");
-    for (let staz of list) {
-        let {nome, latitudine, longitudine} = staz;
 
-        let keys = [];
-        keys = Object.keys(stazione).filter((elem, index) => {
-            if (elem === 'isAttiva') {
-                keys.slice(index);
-            }
-            else {
-                return elem;
-            }
-        }).join(', ');
-
-        let query = `INSERT INTO stazioni(${keys}) VALUES ('${nome}', ${latitudine}, ${longitudine});\n`
-        fs.writeFileSync('dummies.sql', query, {flag: 'as'});
-    }
-});
+});*/
