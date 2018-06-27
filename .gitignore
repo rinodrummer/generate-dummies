@@ -72,5 +72,5 @@ typings/
 # Serverless directories
 .serverless
 
-#
+# SQL files
 .sql
